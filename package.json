@@ -1,0 +1,17 @@
+{
+  "name": "g-plants",
+  "version": "1.0.0",
+  "description": "Command to treat all plants",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node index.js -p 9092"
+  },
+  "keywords": [],
+  "author": "alinpr18",
+  "license": "ISC",
+  "dependencies": {
+    "gnode-api": "^0.2.15"
+  }
+}
