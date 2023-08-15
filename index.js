@@ -13,7 +13,7 @@ process.on("uncaughtException", (error) => {
 });
 
 const ext = new Extension(extensionInfo);
-extensionInfo.name = "G-Plants"
+extensionInfo.name = "Plants"
 
 ext.run();
 
