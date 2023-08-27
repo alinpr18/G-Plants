@@ -4,6 +4,7 @@ import {
   HEntity,
   HEntityType,
   HPacket,
+  HRoomResult,
 } from "gnode-api";
 import extensionInfo from "./package.json" assert { type: "json" };
 
@@ -13,18 +14,20 @@ process.on("uncaughtException", (error) => {
 });
 
 const ext = new Extension(extensionInfo);
-extensionInfo.name = "Plants"
+extensionInfo.name = "Plants";
 
 ext.run();
 
-ext.interceptByNameOrHash(HDirection.TOCLIENT, "Users", onTest);
+ext.interceptByNameOrHash(HDirection.TOCLIENT, "Users", onPlants);
 ext.interceptByNameOrHash(HDirection.TOSERVER, "Chat", onCommandSended);
-ext.interceptByNameOrHash(HDirection.TOSERVER, "GetGuestRoom", onResetCommand);
+ext.interceptByNameOrHash(HDirection.TOCLIENT, "GetGuestRoomResult", onResetCommand);
+ext.interceptByNameOrHash(HDirection.TOSERVER, "Quit", exit);
 
 const entities = new Map();
 let extensionEnabled = false;
 
-function onTest(hMessage) {
+async function onPlants(hMessage) {
+  await sleep(500);
   const plants = HEntity.parse(hMessage.getPacket());
   plants.forEach((plant) => {
     if (plant.entityType === HEntityType.PET)
@@ -67,16 +70,16 @@ async function start() {
   ext.sendToClient(chatPacket);
 }
 
-let roomID;
-let newRoomID;
+function exit() {
+  entities.clear();
+  extensionEnabled = false;
+}
 
 function onResetCommand(hMessage) {
   const packet = hMessage.getPacket();
-  roomID = packet.readInteger();
+  const room = new HRoomResult(packet);
 
-  if (roomID !== newRoomID) {
-    newRoomID = roomID;
-    entities.clear();
-    extensionEnabled = false;
+  if (room.isEnterRoom) {
+    exit();
   }
 }
