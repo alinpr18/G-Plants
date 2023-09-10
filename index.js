@@ -27,7 +27,7 @@ const entities = new Map();
 let extensionEnabled = false;
 
 async function onPlants(hMessage) {
-  await sleep(500);
+  await sleep(1000);
   const plants = HEntity.parse(hMessage.getPacket());
   plants.forEach((plant) => {
     if (plant.entityType === HEntityType.PET)
