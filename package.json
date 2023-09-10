@@ -1,6 +1,6 @@
 {
   "name": "plants",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Command to treat all plants",
   "type": "module",
   "main": "index.js",
