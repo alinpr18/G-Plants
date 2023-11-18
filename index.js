@@ -1,85 +1,120 @@
-import {
-  Extension,
-  HDirection,
-  HEntity,
-  HEntityType,
-  HPacket,
-  HRoomResult,
-} from "gnode-api";
-import extensionInfo from "./package.json" assert { type: "json" };
+import { Extension, HDirection, HEntity, HEntityType, HPacket, HRoomResult } from 'gnode-api'
+import { readFileSync } from 'fs'
+const extensionInfo = JSON.parse(readFileSync('./package.json'))
 
-process.on("uncaughtException", (error) => {
-  console.error(error);
-  process.exit(0);
-});
+process.on('uncaughtException', (error) => {
+  console.error(error)
+  process.exit(0)
+})
 
-const ext = new Extension(extensionInfo);
-extensionInfo.name = "Plants";
+const ext = new Extension(extensionInfo)
+ext.run()
 
-ext.run();
-
-ext.interceptByNameOrHash(HDirection.TOCLIENT, "Users", onPlants);
-ext.interceptByNameOrHash(HDirection.TOSERVER, "Chat", onCommandSended);
-ext.interceptByNameOrHash(HDirection.TOCLIENT, "GetGuestRoomResult", onResetCommand);
-ext.interceptByNameOrHash(HDirection.TOSERVER, "Quit", exit);
-
-const entities = new Map();
-let extensionEnabled = false;
-
-async function onPlants(hMessage) {
-  await sleep(1000);
-  const plants = HEntity.parse(hMessage.getPacket());
-  plants.forEach((plant) => {
-    if (plant.entityType === HEntityType.PET)
-      entities.set(plant.id, plant.name);
-  });
+let extensionEnabled = false
+const entities = {
+  PLANTS: new Map()
+}
+const command = {
+  TREAT: '!plants',
+  COMPOST: '!plants compost'
 }
 
-function onCommandSended(hMessage) {
-  const packet = hMessage.getPacket();
-  const textMessage = packet.readString();
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-  if (textMessage === ":plants") {
-    hMessage.blocked = true;
-    extensionEnabled = !extensionEnabled;
+const hPacketMessage = (message) => {
+  const hPacket = new HPacket('Whisper', HDirection.TOCLIENT)
+  hPacket.appendInt(1)
+  hPacket.appendString(message)
+  hPacket.appendInt(0)
+  hPacket.appendInt(34)
+  hPacket.appendInt(0)
+  hPacket.appendInt(-1)
 
-    if (extensionEnabled) start();
+  ext.sendToClient(hPacket)
+}
 
-    const chatPacket = new HPacket(
-      `{in:Whisper}{i:1}{s:"Plants has been ${
-        extensionEnabled ? "activated" : "deactivated"
-      }"}{i:0}{i:34}{i:0}{i:-1}`
-    );
-    ext.sendToClient(chatPacket);
+const onUsers = async (hMessage) => {
+  await sleep(1000)
+  const packet = hMessage.getPacket()
+  const entity = HEntity.parse(packet)
+
+  entity.forEach((a) => {
+    if (a.entityType === HEntityType.PET) {
+      entities.PLANTS.set(a.id, a.stuff.at(-1))
+    }
+  })
+}
+
+const onCommandSended = (hMessage) => {
+  const packet = hMessage.getPacket()
+  const textMessage = packet.readString()
+  const hPacket = () => hPacketMessage(`Plants has been ${extensionEnabled ? 'activated' : 'deactivated'}`)
+
+  if (textMessage === command.TREAT) {
+    hMessage.blocked = true
+    extensionEnabled = !extensionEnabled
+
+    if (extensionEnabled) treatPlants()
+    hPacket()
+  }
+
+  if (textMessage === command.COMPOST) {
+    hMessage.blocked = true
+    extensionEnabled = !extensionEnabled
+
+    if (extensionEnabled) compostPlants()
+    hPacket()
   }
 }
 
-const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
-
-async function start() {
-  for (let plantID of entities.keys()) {
+const treatPlants = async () => {
+  const n = 0
+  for (const plantId of entities.PLANTS.keys()) {
+    const plantStuff = entities.PLANTS.get(plantId)
     if (extensionEnabled) {
-      const packet = new HPacket(`{out:RespectPet}{i:${plantID}}`);
-      ext.sendToServer(packet);
-      await sleep(500);
+      if (plantStuff !== 'rip') {
+        const hPacket = new HPacket('RespectPet', HDirection.TOSERVER)
+        hPacket.appendInt(plantId)
+        ext.sendToServer(hPacket)
+        await sleep(600)
+      }
     }
   }
-  const chatPacket = new HPacket(
-    `{in:Whisper}{i:1}{s:"All plants have been treated"}{i:0}{i:34}{i:0}{i:-1}`
-  );
-  ext.sendToClient(chatPacket);
+
+  hPacketMessage(`All plants have been treated (${n})`)
+  extensionEnabled = false
 }
 
-function exit() {
-  entities.clear();
-  extensionEnabled = false;
-}
-
-function onResetCommand(hMessage) {
-  const packet = hMessage.getPacket();
-  const room = new HRoomResult(packet);
-
-  if (room.isEnterRoom) {
-    exit();
+const compostPlants = async () => {
+  const n = 0
+  for (const plantId of entities.PLANTS.keys()) {
+    const plantStuff = entities.PLANTS.get(plantId)
+    if (extensionEnabled) {
+      if (plantStuff === 'rip') {
+        const hPacket = new HPacket('CompostPlant', HDirection.TOSERVER)
+        hPacket.appendInt(plantId)
+        ext.sendToServer(hPacket)
+        await sleep(600)
+      }
+    }
   }
+
+  hPacketMessage(`All plants have been compost (${n})`)
+  extensionEnabled = false
 }
+
+const exit = () => {
+  entities.PLANTS.clear()
+  extensionEnabled = false
+}
+
+const onCommandReset = (hMessage) => {
+  const packet = hMessage.getPacket()
+  const hRoom = new HRoomResult(packet)
+  if (hRoom.isEnterRoom) exit()
+}
+
+ext.interceptByNameOrHash(HDirection.TOCLIENT, 'Users', onUsers)
+ext.interceptByNameOrHash(HDirection.TOSERVER, 'Chat', onCommandSended)
+ext.interceptByNameOrHash(HDirection.TOCLIENT, 'GetGuestRoomResult', onCommandReset)
+ext.interceptByNameOrHash(HDirection.TOSERVER, 'Quit', exit)

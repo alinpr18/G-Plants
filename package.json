@@ -1,17 +1,23 @@
 {
   "name": "plants",
-  "version": "1.0.2",
-  "description": "Command to treat all plants",
+  "version": "2.0.0",
+  "description": "Command to treat/compost all plants",
   "type": "module",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "node index.js -p 9092"
+    "test": "node --watch index.js -p 9092"
   },
   "keywords": [],
   "author": "alinpr18",
   "license": "ISC",
   "dependencies": {
     "gnode-api": "^0.2.15"
+  },
+  "devDependencies": {
+    "standard": "^17.1.0"
+  },
+  "eslintConfig": {
+    "extends": "./node_modules/standard/eslintrc.json"
   }
 }
