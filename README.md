@@ -1,6 +1,11 @@
 # Plants
 
-Type `:plants` and treat all plants in the room automatically
+Treat and compost all monster plants in the room automatically.
+
+Commands:
+
+!plants - Treat all plants
+!plants compost - Compost all plants
 
 ## Getting started
 
