@@ -68,7 +68,7 @@ const onCommandSended = (hMessage) => {
 }
 
 const treatPlants = async () => {
-  const n = 0
+  let n = 0
   for (const plantId of entities.PLANTS.keys()) {
     const plantStuff = entities.PLANTS.get(plantId)
     if (extensionEnabled) {
@@ -76,6 +76,7 @@ const treatPlants = async () => {
         const hPacket = new HPacket('RespectPet', HDirection.TOSERVER)
         hPacket.appendInt(plantId)
         ext.sendToServer(hPacket)
+        n++
         await sleep(600)
       }
     }
@@ -86,7 +87,7 @@ const treatPlants = async () => {
 }
 
 const compostPlants = async () => {
-  const n = 0
+  let n = 0
   for (const plantId of entities.PLANTS.keys()) {
     const plantStuff = entities.PLANTS.get(plantId)
     if (extensionEnabled) {
@@ -94,6 +95,7 @@ const compostPlants = async () => {
         const hPacket = new HPacket('CompostPlant', HDirection.TOSERVER)
         hPacket.appendInt(plantId)
         ext.sendToServer(hPacket)
+        n++
         await sleep(600)
       }
     }
